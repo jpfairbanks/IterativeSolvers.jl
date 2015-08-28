@@ -59,6 +59,7 @@ end
 
 function next{T}(P::Arnoldi{T}, F::ArnoldiFact{T})
     V, H, r = F.V, F.H, F.r
+    K = P.K
     β = norm(r)
 
     H = size(H,2)==0 ? zeros(1,0) :
@@ -93,14 +94,15 @@ function done(P::Factorizer, F::ArnoldiFact)
     β < P.term.tol
 end
 
-#Test of Arnoldi iterator
+function Shifts(H, p, by::Function=x->real(x))
+    #by: Keep eigenvalues by algebraically largest real part
 
-n=10
-M=randn(n,n)#;M+=M'
-K = Krylov(M, randn(n))
-for (iter, Ar) in enumerate(Arnoldi(K, Terminator(1e-9, n)))
-    println("Iteration $iter:\t residual norm = ", norm(Ar.r))
-    @assert abs(norm(K.A*Ar.V-Ar.V*Ar.H) - norm(Ar.r)) < sqrt(eps())
+    #Use exact shifts
+    evals = eigvals(H)
+    #Select p unwanted eigenvalues
+    0≤p≤size(H,1) || throw(ArgumentError("Asked for p=$p eigenvalues but only $(size(H,1)) are available"))
+    sort!(evals, by=by)
+    evals[1:p]
 end
 
 # Implicitly restarted Arnoldi (Algorithm 3.8; Sorensen, 1992)
@@ -111,6 +113,7 @@ type ImplicitlyRestarted{Alg<:Factorizer} <: Factorizer
     p :: Int #Number of extra steps
     getshifts :: Function
 end
+
 
 function ImplicitlyRestarted{Alg<:Factorizer}(P::Alg, k::Int, p::Int, getshifts::Function=Shifts)
     ImplicitlyRestarted{Alg}(P, k, p, getshifts)
@@ -167,22 +170,7 @@ end
 
 done(P::Union(ImplicitlyRestarted,Restarted), F::ArnoldiFact) = done(P.P, F)
 
-function Shifts(H, p, by::Function=x->real(x))
-    #by: Keep eigenvalues by algebraically largest real part
 
-    #Use exact shifts
-    evals = eigvals(H)
-    #Select p unwanted eigenvalues
-    0≤p≤size(H,1) || throw(ArgumentError("Asked for p=$p eigenvalues but only $(size(H,1)) are available"))
-    sort!(evals, by=by)
-    evals[1:p]
-end
-
-#Test of shifts function using random Hessenberg
-H=zeros(5,5)
-for i=1:5, j=1:min(5,i+1); H[j,i]=randn(); end
-println(round(H,3))
-Shifts(H, 3)
 
 
 # Get approximate eigenvalues and eigenvectors
@@ -218,21 +206,6 @@ eigfact(Ar::ArnoldiFact; purge::Bool=false) =
     eigfact!(ArnoldiFact(Ar.V, copy(Ar.H), Ar.r), purge=purge)
 eigvals(Ar::ArnoldiFact) = eigvals(Ar.H)
 
-# Test of implicitly and explicitly restarted Arnoldi iterators
-n=15
-M=randn(n,n)+im*randn(n,n)
-v=randn(n)+im*randn(n)
-K = Krylov(M, v)
-for (iter, Ar) in enumerate(ImplicitlyRestarted(Arnoldi(K, Terminator(1e-9, n)), 5, 5))
-    println("Iteration $iter:\t residual norm = ", norm(Ar.r))
-    @assert abs(norm(K.A*Ar.V-Ar.V*Ar.H) - norm(Ar.r)) < sqrt(eps())
-end
-
-for (iter, Ar) in enumerate(Restarted(Arnoldi(K, Terminator(1e-9, n)), n))
-    println("Iteration $iter:\t residual norm = ", norm(Ar.r))
-    iter==n && break
-    @assert abs(norm(K.A*Ar.V-Ar.V*Ar.H) - norm(Ar.r)) < sqrt(eps())
-end
 
 n=10
 M=randn(n,n); M+=M'

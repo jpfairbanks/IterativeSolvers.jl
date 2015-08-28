@@ -197,8 +197,11 @@ for T in (Float32, Float64)
 end
 end
 
+#Arnoldi eigensolver replacing arpack
+include("arnoldi.jl")
+
 #Golub-Kahan-Lanczos singular values computation
-include("lanczos-svd.jl")
+#= include("lanczos-svd.jl") =#
 
 include("lsqr.jl")
 
