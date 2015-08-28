@@ -27,6 +27,7 @@ include("chebyshev.jl")
 #Eigensolvers
 include("simple.jl")
 include("lanczos.jl")
+include("arnoldi.jl")
 
 #SVD solvers
 include("lanczos-svd.jl")
