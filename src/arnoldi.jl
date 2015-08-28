@@ -207,19 +207,6 @@ eigfact(Ar::ArnoldiFact; purge::Bool=false) =
 eigvals(Ar::ArnoldiFact) = eigvals(Ar.H)
 
 
-n=10
-M=randn(n,n); M+=M'
-K = Krylov(M, randn(n))
-for (iter, Ar) in enumerate(Arnoldi(K, Terminator(1e-9, n)))
-    println("Iteration $iter:\t residual norm = ", norm(Ar.r))
-    ef = eigfact!(deepcopy(Ar))
-    @show ef.values
-    lambda, istar = findmax(ef.values)
-    evec = ef.vectors[:,istar]
-    @show evec
-    @assert dot(evec,(K.A*evec)) - lambda <= 10.0^-7
-    @assert abs(norm(K.A*Ar.V-Ar.V*Ar.H) - norm(Ar.r)) < sqrt(eps())
-end
 
 # # References
 #
