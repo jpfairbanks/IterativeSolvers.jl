@@ -201,7 +201,7 @@ end
 include("arnoldi.jl")
 
 #Golub-Kahan-Lanczos singular values computation
-include("lanczos-svd.jl")
+#= include("lanczos-svd.jl") =#
 
 include("lsqr.jl")
 
